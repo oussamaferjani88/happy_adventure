@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyrine's Happy Adventure</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
@@ -17,18 +17,31 @@
             background-color: #ffe4e1;
             overflow: hidden;
             font-family: 'Fredoka', sans-serif;
+            touch-action: none;
         }
 
         #game-container {
             position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 800px;
+            max-height: 450px;
             box-shadow: 0 0 20px rgba(255, 105, 180, 0.3);
-            border-radius: 15px;
+            background-color: #ffc0cb;
             overflow: hidden;
-            border: 5px solid #ffb6c1;
+        }
+
+        @media (min-width: 800px) and (min-height: 450px) {
+            #game-container {
+                border-radius: 15px;
+                border: 5px solid #ffb6c1;
+            }
         }
 
         canvas {
             display: block;
+            width: 100%;
+            height: 100%;
             background: linear-gradient(to bottom, #ffc0cb, #e6e6fa);
         }
 
@@ -42,29 +55,29 @@
         }
 
         #hud {
-            padding: 15px;
+            padding: 10px;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
         }
 
         #hearts {
-            font-size: 24px;
+            font-size: 20px;
             color: #ff1493;
             text-shadow: 1px 1px 2px white;
         }
 
         #quote-container {
             position: absolute;
-            top: 20px;
+            top: 15px;
             left: 50%;
             transform: translateX(-50%);
             text-align: center;
-            width: 80%;
+            width: 70%;
             transition: opacity 0.5s ease-in-out;
             color: #ff69b4;
             font-weight: 600;
-            font-size: 1.2rem;
+            font-size: 1rem;
             text-shadow: 1px 1px 0px white;
         }
 
@@ -74,7 +87,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 192, 203, 0.9);
+            background: rgba(255, 192, 203, 0.95);
             display: none;
             flex-direction: column;
             justify-content: center;
@@ -82,46 +95,107 @@
             pointer-events: auto;
             text-align: center;
             padding: 20px;
+            z-index: 100;
         }
 
         #overlay h1 {
             color: #ff1493;
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px white;
-            line-height: 1.2;
+            text-shadow: 1px 1px 2px white;
         }
 
         #drake-img {
-            width: 180px;
+            width: 140px;
             height: auto;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             border-radius: 15px;
-            border: 4px solid #ff69b4;
-            box-shadow: 0 0 15px rgba(255, 105, 180, 0.5);
+            border: 3px solid #ff69b4;
         }
 
-        button {
-            padding: 12px 25px;
-            font-size: 1.2rem;
+        /* Touch Controls */
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.4);
+            border: 3px solid rgba(255, 105, 180, 0.6);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: #ff1493;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        .btn:active {
+            background: rgba(255, 105, 180, 0.4);
+            transform: scale(0.9);
+        }
+
+        #orientation-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffc0cb;
+            color: #ff1493;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        @media screen and (orientation: portrait) {
+            #orientation-warning {
+                display: flex;
+            }
+        }
+
+        button#restartBtn {
+            padding: 10px 20px;
+            font-size: 1.1rem;
             background-color: #ff69b4;
             color: white;
             border: none;
-            border-radius: 25px;
+            border-radius: 20px;
             cursor: pointer;
             font-family: 'Fredoka', sans-serif;
-            transition: transform 0.2s, background-color 0.2s;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            margin-top: 10px;
-        }
-
-        button:hover {
-            background-color: #ff1493;
-            transform: scale(1.05);
         }
     </style>
 </head>
 <body>
+
+<div id="orientation-warning">
+    <div style="font-size: 50px;">🔄</div>
+    <h2>Please turn your phone horizontal</h2>
+    <p>For the best experience, play in landscape mode!</p>
+</div>
 
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
@@ -131,7 +205,18 @@
             <div id="collectibles" style="color: #ff69b4; font-weight: 600; text-shadow: 1px 1px 0 white;">0 / 12</div>
         </div>
         <div id="quote-container">You light up every room</div>
+        
+        <div id="controls">
+            <div class="control-group">
+                <div class="btn" id="btnLeft">◀</div>
+                <div class="btn" id="btnRight">▶</div>
+            </div>
+            <div class="control-group">
+                <div class="btn" id="btnJump">▲</div>
+            </div>
+        </div>
     </div>
+
     <div id="overlay">
         <img id="drake-img" src="drake.png">
         <h1 id="overlayMessage">Message</h1>
@@ -147,22 +232,20 @@
     const collectiblesDisplay = document.getElementById('collectibles');
     const overlay = document.getElementById('overlay');
     const overlayMessage = document.getElementById('overlayMessage');
-    const drakeImg = document.getElementById('drake-img');
     const restartBtn = document.getElementById('restartBtn');
 
-    // Game constants
-    const CANVAS_WIDTH = 800;
-    const CANVAS_HEIGHT = 450;
+    // Virtual resolution for internal logic
+    const V_WIDTH = 800;
+    const V_HEIGHT = 450;
     const GRAVITY = 0.5;
     const JUMP_FORCE = -12;
     const MOVE_SPEED = 5;
-    const GROUND_Y = CANVAS_HEIGHT - 60;
+    const GROUND_Y = V_HEIGHT - 60;
     const LEVEL_WIDTH = 4000;
 
-    canvas.width = CANVAS_WIDTH;
-    canvas.height = CANVAS_HEIGHT;
+    canvas.width = V_WIDTH;
+    canvas.height = V_HEIGHT;
 
-    // Game state
     let gameActive = true;
     let cameraX = 0;
     let particles = [];
@@ -183,8 +266,20 @@
     let currentQuoteIndex = 0;
 
     const keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ' ': false };
+    
+    // Desktop controls
     window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
     window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+    // Touch controls
+    const setupTouch = (id, key) => {
+        const el = document.getElementById(id);
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+        el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+    };
+    setupTouch('btnLeft', 'ArrowLeft');
+    setupTouch('btnRight', 'ArrowRight');
+    setupTouch('btnJump', 'ArrowUp');
 
     class Player {
         constructor() { this.reset(); }
@@ -210,7 +305,7 @@
             }
             this.vy += GRAVITY; this.x += this.vx; this.y += this.vy;
             if (this.x < 0) this.x = 0;
-            if (this.y > CANVAS_HEIGHT) this.takeDamage();
+            if (this.y > V_HEIGHT) this.takeDamage();
             this.onGround = false;
             if (this.isInvincible) {
                 this.invincibilityTimer--;
@@ -219,8 +314,7 @@
         }
         draw() {
             if (this.isInvincible && Math.floor(Date.now() / 100) % 2 === 0) return;
-            ctx.save();
-            ctx.translate(this.x - cameraX, this.y);
+            ctx.save(); ctx.translate(this.x - cameraX, this.y);
             ctx.fillStyle = '#ff69b4'; ctx.beginPath(); ctx.moveTo(5, 45); ctx.lineTo(35, 45); ctx.lineTo(25, 20); ctx.lineTo(15, 20); ctx.fill();
             ctx.fillStyle = '#ffe0bd'; ctx.beginPath(); ctx.arc(20, 15, 12, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.arc(20, 12, 14, Math.PI, 0); ctx.fillRect(6, 12, 8, 20); ctx.fillRect(26, 12, 8, 20); ctx.fill();
@@ -262,10 +356,7 @@
             if (this.isHit) return;
             this.health--; this.isHit = true; this.hitTimer = 60;
             for(let i=0; i<20; i++) particles.push(new Particle(this.x + 50, this.y + 50, '#ff0000'));
-            if (this.health <= 0) {
-                bossDefeated = true; oussamaReleased = true;
-                for(let i=0; i<50; i++) particles.push(new Particle(this.x + 50, this.y + 50, '#ffd700', true));
-            }
+            if (this.health <= 0) { bossDefeated = true; oussamaReleased = true; for(let i=0; i<50; i++) particles.push(new Particle(this.x + 50, this.y + 50, '#ffd700', true)); }
         }
         draw() {
             if (bossDefeated) return;
@@ -341,11 +432,7 @@
             ctx.restore();
             if (this.isFalling) { this.rotation += 0.1; this.fallY += 10; }
         }
-        checkWin(p) {
-            if (gameActive && oussamaReleased && p.x + p.width > this.x) {
-                endGame(true);
-            }
-        }
+        checkWin(p) { if (gameActive && oussamaReleased && p.x + p.width > this.x) endGame(true); }
     }
 
     const player = new Player();
@@ -355,26 +442,11 @@
     let totalCollectibles = 12;
 
     function initLevel() {
-        platforms = []; collectibles = []; clouds = [];
-        collectedCount = 0; bossDefeated = false; oussamaReleased = false;
-        boss = new Boss(LEVEL_WIDTH - 700, GROUND_Y - 100);
-        man = new Man(LEVEL_WIDTH - 150, GROUND_Y - 70);
-        
+        platforms = []; collectibles = []; clouds = []; collectedCount = 0; bossDefeated = false; oussamaReleased = false;
+        boss = new Boss(LEVEL_WIDTH - 700, GROUND_Y - 100); man = new Man(LEVEL_WIDTH - 150, GROUND_Y - 70);
         for(let i=0; i<25; i++) clouds.push({ x: Math.random() * LEVEL_WIDTH, y: Math.random() * 150 + 20, s: Math.random() * 0.5 + 0.5 });
-
-        // Build level platforms - Ensure Oussama is on a solid ground
-        platforms.push(new Platform(0, GROUND_Y, 800, 60));
-        platforms.push(new Platform(900, GROUND_Y, 600, 60));
-        platforms.push(new Platform(1600, GROUND_Y, 700, 60));
-        platforms.push(new Platform(2400, GROUND_Y, 600, 60));
-        // Final platform for Boss and Oussama
-        platforms.push(new Platform(3100, GROUND_Y, 900, 60));
-
-        platforms.push(new Platform(400, GROUND_Y - 100, 150, 20));
-        platforms.push(new Platform(1200, GROUND_Y - 120, 200, 20));
-        platforms.push(new Platform(2000, GROUND_Y - 100, 200, 20));
-        platforms.push(new Platform(2700, GROUND_Y - 120, 200, 20));
-
+        platforms.push(new Platform(0, GROUND_Y, 800, 60)); platforms.push(new Platform(900, GROUND_Y, 600, 60)); platforms.push(new Platform(1600, GROUND_Y, 700, 60)); platforms.push(new Platform(2400, GROUND_Y, 600, 60)); platforms.push(new Platform(3100, GROUND_Y, 900, 60));
+        platforms.push(new Platform(400, GROUND_Y - 100, 150, 20)); platforms.push(new Platform(1200, GROUND_Y - 120, 200, 20)); platforms.push(new Platform(2000, GROUND_Y - 100, 200, 20)); platforms.push(new Platform(2700, GROUND_Y - 120, 200, 20));
         const emojiList = ['🌸', '🎁', '⭐', '🦋', '🍓', '💌', '🍩', '💎', '🌷', '🍦', '🎀', '🍭'];
         collectibles = emojiList.map((e, i) => new Collectible(400 + i * 250, GROUND_Y - 150 - (i%2)*50, e));
         updateHUD();
@@ -386,23 +458,14 @@
     }
 
     function endGame(win) {
-        if (!gameActive) return;
-        gameActive = false;
-        overlay.style.display = 'flex';
-        if (win) {
-            man.isFalling = true;
-            overlayMessage.innerHTML = "YOU WIN, CONGRATULATIONS,<br>maadech daprem svp ❤️";
-            restartBtn.innerText = "Play Again";
-            startConfetti();
-        } else {
-            overlayMessage.innerText = "yyyyraweh hahaha aya 3awed";
-            restartBtn.innerText = "Try Again";
-        }
+        if (!gameActive) return; gameActive = false; overlay.style.display = 'flex';
+        if (win) { man.isFalling = true; overlayMessage.innerHTML = "YOU WIN, CONGRATULATIONS,<br>maadech daprem svp ❤️"; restartBtn.innerText = "Play Again"; startConfetti(); }
+        else { overlayMessage.innerText = "yyyyraweh hahaha aya 3awed"; restartBtn.innerText = "Try Again"; }
     }
 
     function startConfetti() {
         const shapes = ['🌸', '🌼', '💖', '✨', '💎'];
-        for(let i=0; i<120; i++) confetti.push({ x: Math.random() * CANVAS_WIDTH, y: -Math.random() * CANVAS_HEIGHT, vx: (Math.random() - 0.5) * 4, vy: 2 + Math.random() * 3, char: shapes[Math.floor(Math.random() * shapes.length)], size: 10 + Math.random() * 25 });
+        for(let i=0; i<120; i++) confetti.push({ x: Math.random() * V_WIDTH, y: -Math.random() * V_HEIGHT, vx: (Math.random() - 0.5) * 4, vy: 2 + Math.random() * 3, char: shapes[Math.floor(Math.random() * shapes.length)], size: 10 + Math.random() * 25 });
     }
 
     function resetGame() { player.reset(); cameraX = 0; gameActive = true; overlay.style.display = 'none'; confetti = []; initLevel(); }
@@ -410,41 +473,20 @@
 
     setInterval(() => {
         quoteContainer.style.opacity = 0;
-        setTimeout(() => {
-            currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
-            quoteContainer.innerText = quotes[currentQuoteIndex];
-            quoteContainer.style.opacity = 1;
-        }, 500);
+        setTimeout(() => { currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length; quoteContainer.innerText = quotes[currentQuoteIndex]; quoteContainer.style.opacity = 1; }, 500);
     }, 4000);
 
     function gameLoop() {
-        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        let bgGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-        bgGrad.addColorStop(0, '#ffc0cb'); bgGrad.addColorStop(1, '#e6e6fa');
-        ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        ctx.font = '40px serif';
-        clouds.forEach(c => { ctx.globalAlpha = 0.4; ctx.fillText('☁️', c.x - cameraX * c.s, c.y); ctx.globalAlpha = 1.0; });
-
-        if (gameActive) {
-            let targetCameraX = player.x - CANVAS_WIDTH / 3;
-            cameraX += (targetCameraX - cameraX) * 0.1;
-            cameraX = Math.max(0, Math.min(cameraX, LEVEL_WIDTH - CANVAS_WIDTH));
-        }
-
+        ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
+        let bgGrad = ctx.createLinearGradient(0, 0, 0, V_HEIGHT); bgGrad.addColorStop(0, '#ffc0cb'); bgGrad.addColorStop(1, '#e6e6fa');
+        ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+        ctx.font = '40px serif'; clouds.forEach(c => { ctx.globalAlpha = 0.4; ctx.fillText('☁️', c.x - cameraX * c.s, c.y); ctx.globalAlpha = 1.0; });
+        if (gameActive) { let targetCameraX = player.x - V_WIDTH / 3; cameraX += (targetCameraX - cameraX) * 0.1; cameraX = Math.max(0, Math.min(cameraX, LEVEL_WIDTH - V_WIDTH)); }
         platforms.forEach(p => { p.draw(); if (gameActive) p.checkCollision(player); });
         collectibles.forEach(c => { c.draw(); if (gameActive) c.checkCollision(player); });
-        boss.update(); boss.draw();
-        man.draw(); man.checkWin(player);
-        player.update(); player.draw();
-
-        for (let i = particles.length - 1; i >= 0; i--) {
-            particles[i].update(); particles[i].draw();
-            if (particles[i].life <= 0) particles.splice(i, 1);
-        }
-        confetti.forEach(c => {
-            c.x += c.vx; c.y += c.vy; ctx.font = `${c.size}px serif`; ctx.fillText(c.char, c.x, c.y);
-            if (c.y > CANVAS_HEIGHT) { c.y = -20; c.x = Math.random() * CANVAS_WIDTH; }
-        });
+        boss.update(); boss.draw(); man.draw(); man.checkWin(player); player.update(); player.draw();
+        for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); particles[i].draw(); if (particles[i].life <= 0) particles.splice(i, 1); }
+        confetti.forEach(c => { c.x += c.vx; c.y += c.vy; ctx.font = `${c.size}px serif`; ctx.fillText(c.char, c.x, c.y); if (c.y > V_HEIGHT) { c.y = -20; c.x = Math.random() * V_WIDTH; } });
         requestAnimationFrame(gameLoop);
     }
 
