@@ -2,191 +2,56 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Cyrine's Happy Adventure</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
 
         body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #ffe4e1;
-            overflow: hidden;
-            font-family: 'Fredoka', sans-serif;
-            touch-action: none;
+            margin: 0; padding: 0; display: flex; justify-content: center; align-items: center;
+            height: 100vh; background-color: #ffe4e1; overflow: hidden; font-family: 'Fredoka', sans-serif;
+            touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
         }
 
         #game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            max-width: 800px;
-            max-height: 450px;
-            box-shadow: 0 0 20px rgba(255, 105, 180, 0.3);
-            background-color: #ffc0cb;
-            overflow: hidden;
-        }
-
-        @media (min-width: 800px) and (min-height: 450px) {
-            #game-container {
-                border-radius: 15px;
-                border: 5px solid #ffb6c1;
-            }
+            position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background-color: #ffc0cb;
         }
 
         canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to bottom, #ffc0cb, #e6e6fa);
+            max-width: 100%; max-height: 100%; object-fit: contain; background: linear-gradient(to bottom, #ffc0cb, #e6e6fa);
         }
 
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
 
-        #hud {
-            padding: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
+        #hud { padding: 10px; display: flex; justify-content: space-between; align-items: flex-start; width: 100%; box-sizing: border-box; }
+        #hearts { font-size: 18px; color: #ff1493; text-shadow: 1px 1px 2px white; }
+        #collectibles { color: #ff69b4; font-weight: 600; text-shadow: 1px 1px 0 white; }
 
-        #hearts {
-            font-size: 20px;
-            color: #ff1493;
-            text-shadow: 1px 1px 2px white;
-        }
-
-        #quote-container {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            width: 70%;
-            transition: opacity 0.5s ease-in-out;
-            color: #ff69b4;
-            font-weight: 600;
-            font-size: 1rem;
-            text-shadow: 1px 1px 0px white;
-        }
+        #quote-container { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); text-align: center; width: 60%; color: #ff69b4; font-weight: 600; font-size: 0.9rem; text-shadow: 1px 1px 0px white; }
 
         #overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 192, 203, 0.95);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            pointer-events: auto;
-            text-align: center;
-            padding: 20px;
-            z-index: 100;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 192, 203, 0.95);
+            display: none; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; text-align: center; padding: 20px; z-index: 100;
         }
+        #overlay h1 { color: #ff1493; font-size: 1.4rem; margin-bottom: 10px; text-shadow: 1px 1px 2px white; }
+        #drake-img { width: 120px; height: auto; margin-bottom: 10px; border-radius: 10px; border: 3px solid #ff69b4; }
 
-        #overlay h1 {
-            color: #ff1493;
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            text-shadow: 1px 1px 2px white;
-        }
-
-        #drake-img {
-            width: 140px;
-            height: auto;
-            margin-bottom: 10px;
-            border-radius: 15px;
-            border: 3px solid #ff69b4;
-        }
-
-        /* Touch Controls */
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
-            pointer-events: none;
-            box-sizing: border-box;
-        }
-
-        .control-group {
-            display: flex;
-            gap: 15px;
-            pointer-events: auto;
-        }
-
+        /* Touch Controls - Explicitly pointer-events: auto */
+        #controls { position: absolute; bottom: 15px; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; pointer-events: none; box-sizing: border-box; }
+        .control-group { display: flex; gap: 20px; pointer-events: auto; }
         .btn {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.4);
-            border: 3px solid rgba(255, 105, 180, 0.6);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            color: #ff1493;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
+            width: 60px; height: 60px; background: rgba(255, 255, 255, 0.6); border: 3px solid #ff69b4; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; font-size: 28px; color: #ff1493;
+            pointer-events: auto; touch-action: none; -webkit-tap-highlight-color: transparent;
         }
-
-        .btn:active {
-            background: rgba(255, 105, 180, 0.4);
-            transform: scale(0.9);
-        }
+        .btn:active { background: #ff69b4; color: white; transform: scale(0.9); }
 
         #orientation-warning {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #ffc0cb;
-            color: #ff1493;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            z-index: 1000;
-            padding: 20px;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffc0cb; color: #ff1493;
+            display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 1000; padding: 20px;
         }
-
-        @media screen and (orientation: portrait) {
-            #orientation-warning {
-                display: flex;
-            }
-        }
-
-        button#restartBtn {
-            padding: 10px 20px;
-            font-size: 1.1rem;
-            background-color: #ff69b4;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-family: 'Fredoka', sans-serif;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
+        @media screen and (orientation: portrait) { #orientation-warning { display: flex; } }
+        button#restartBtn { padding: 8px 16px; font-size: 1rem; background-color: #ff69b4; color: white; border: none; border-radius: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -194,7 +59,7 @@
 <div id="orientation-warning">
     <div style="font-size: 50px;">🔄</div>
     <h2>Please turn your phone horizontal</h2>
-    <p>For the best experience, play in landscape mode!</p>
+    <p>Landscape mode is required for the best experience!</p>
 </div>
 
 <div id="game-container">
@@ -202,7 +67,7 @@
     <div id="ui-layer">
         <div id="hud">
             <div id="hearts">❤️❤️❤️❤️❤️</div>
-            <div id="collectibles" style="color: #ff69b4; font-weight: 600; text-shadow: 1px 1px 0 white;">0 / 12</div>
+            <div id="collectibles">0 / 12</div>
         </div>
         <div id="quote-container">You light up every room</div>
         
@@ -218,7 +83,7 @@
     </div>
 
     <div id="overlay">
-        <img id="drake-img" src="drake.png">
+        <img id="drake-img" src="https://i.ibb.co/v3XfXzS/drake-smiling.png">
         <h1 id="overlayMessage">Message</h1>
         <button id="restartBtn">Restart</button>
     </div>
@@ -234,52 +99,43 @@
     const overlayMessage = document.getElementById('overlayMessage');
     const restartBtn = document.getElementById('restartBtn');
 
-    // Virtual resolution for internal logic
-    const V_WIDTH = 800;
-    const V_HEIGHT = 450;
-    const GRAVITY = 0.5;
-    const JUMP_FORCE = -12;
-    const MOVE_SPEED = 5;
-    const GROUND_Y = V_HEIGHT - 60;
-    const LEVEL_WIDTH = 4000;
+    const V_WIDTH = 800; const V_HEIGHT = 450; const GRAVITY = 0.5; const JUMP_FORCE = -12; const MOVE_SPEED = 5; const GROUND_Y = V_HEIGHT - 60; const LEVEL_WIDTH = 4000;
+    canvas.width = V_WIDTH; canvas.height = V_HEIGHT;
 
-    canvas.width = V_WIDTH;
-    canvas.height = V_HEIGHT;
-
-    let gameActive = true;
-    let cameraX = 0;
-    let particles = [];
-    let confetti = [];
-    let collectedCount = 0;
-    let bossDefeated = false;
-    let oussamaReleased = false;
-    let quotes = [
-        "You are beautiful",
-        "Cyrine = Sunshine",
-        "You light up every room",
-        "Stay happy please",
-        "You are the best",
-        "Your smile changes everything",
-        "Keep shining!",
-        "You are precious"
-    ];
+    let gameActive = true; let cameraX = 0; let particles = []; let confetti = []; let collectedCount = 0; let bossDefeated = false; let oussamaReleased = false;
+    let quotes = ["You are beautiful", "Cyrine = Sunshine", "You light up every room", "Stay happy please", "You are the best", "Your smile changes everything", "Keep shining!", "You are precious"];
     let currentQuoteIndex = 0;
 
-    const keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ' ': false };
-    
-    // Desktop controls
-    window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
-    window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+    // Control State
+    const controls = { left: false, right: false, jump: false };
 
-    // Touch controls
-    const setupTouch = (id, key) => {
+    // Keyboard
+    window.addEventListener('keydown', e => {
+        if(e.key === 'ArrowLeft') controls.left = true;
+        if(e.key === 'ArrowRight') controls.right = true;
+        if(e.key === 'ArrowUp' || e.key === ' ') controls.jump = true;
+    });
+    window.addEventListener('keyup', e => {
+        if(e.key === 'ArrowLeft') controls.left = false;
+        if(e.key === 'ArrowRight') controls.right = false;
+        if(e.key === 'ArrowUp' || e.key === ' ') controls.jump = false;
+    });
+
+    // Touch/Mouse UI Controls
+    const bindBtn = (id, action) => {
         const el = document.getElementById(id);
-        el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
-        el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+        const start = (e) => { e.preventDefault(); controls[action] = true; };
+        const end = (e) => { e.preventDefault(); controls[action] = false; };
+        
+        el.addEventListener('touchstart', start, { passive: false });
+        el.addEventListener('touchend', end, { passive: false });
+        el.addEventListener('mousedown', start);
+        el.addEventListener('mouseup', end);
+        el.addEventListener('mouseleave', end);
     };
-    setupTouch('btnLeft', 'ArrowLeft');
-    setupTouch('btnRight', 'ArrowRight');
-    setupTouch('btnJump', 'ArrowUp');
+    bindBtn('btnLeft', 'left');
+    bindBtn('btnRight', 'right');
+    bindBtn('btnJump', 'jump');
 
     class Player {
         constructor() { this.reset(); }
@@ -287,30 +143,25 @@
             this.x = 50; this.y = GROUND_Y - 50; this.width = 40; this.height = 50;
             this.vx = 0; this.vy = 0; this.onGround = false; this.hearts = 5;
             this.isInvincible = false; this.invincibilityTimer = 0;
-            this.lastSafeX = 50; this.lastSafeY = GROUND_Y - 50;
-            this.victoryHop = 0;
+            this.lastSafeX = 50; this.lastSafeY = GROUND_Y - 50; this.victoryHop = 0;
         }
         update() {
-            if (!gameActive && this.hearts > 0) {
-                this.victoryHop += 0.1;
-                this.y = (GROUND_Y - 50) + Math.sin(this.victoryHop) * 20;
-                return;
-            }
-            if (keys.ArrowLeft) this.vx = -MOVE_SPEED;
-            else if (keys.ArrowRight) this.vx = MOVE_SPEED;
+            if (!gameActive && this.hearts > 0) { this.victoryHop += 0.1; this.y = (GROUND_Y - 50) + Math.sin(this.victoryHop) * 20; return; }
+            
+            if (controls.left) this.vx = -MOVE_SPEED;
+            else if (controls.right) this.vx = MOVE_SPEED;
             else this.vx = 0;
-            if ((keys.ArrowUp || keys[' ']) && this.onGround) {
+
+            if (controls.jump && this.onGround) {
                 this.vy = JUMP_FORCE; this.onGround = false;
                 for(let i=0; i<8; i++) particles.push(new Particle(this.x + this.width/2, this.y + this.height, '#fff', true));
             }
+
             this.vy += GRAVITY; this.x += this.vx; this.y += this.vy;
             if (this.x < 0) this.x = 0;
             if (this.y > V_HEIGHT) this.takeDamage();
             this.onGround = false;
-            if (this.isInvincible) {
-                this.invincibilityTimer--;
-                if (this.invincibilityTimer <= 0) this.isInvincible = false;
-            }
+            if (this.isInvincible) { this.invincibilityTimer--; if (this.invincibilityTimer <= 0) this.isInvincible = false; }
         }
         draw() {
             if (this.isInvincible && Math.floor(Date.now() / 100) % 2 === 0) return;
@@ -328,29 +179,18 @@
             if (this.isInvincible) return;
             this.hearts--; updateHUD();
             if (this.hearts <= 0) endGame(false);
-            else {
-                this.isInvincible = true; this.invincibilityTimer = 120;
-                this.x = this.lastSafeX; this.y = this.lastSafeY; this.vx = 0; this.vy = 0;
-            }
+            else { this.isInvincible = true; this.invincibilityTimer = 120; this.x = this.lastSafeX; this.y = this.lastSafeY; this.vx = 0; this.vy = 0; }
         }
     }
 
     class Boss {
-        constructor(x, y) {
-            this.x = x; this.y = y; this.width = 100; this.height = 100;
-            this.health = 3; this.vx = -2; this.isHit = false; this.hitTimer = 0;
-        }
+        constructor(x, y) { this.x = x; this.y = y; this.width = 100; this.height = 100; this.health = 3; this.vx = -2; this.isHit = false; this.hitTimer = 0; }
         update() {
             if (bossDefeated) return;
-            this.x += this.vx;
-            if (this.x < LEVEL_WIDTH - 900 || this.x > LEVEL_WIDTH - 500) this.vx *= -1;
+            this.x += this.vx; if (this.x < LEVEL_WIDTH - 900 || this.x > LEVEL_WIDTH - 500) this.vx *= -1;
             if (this.isHit) { this.hitTimer--; if (this.hitTimer <= 0) this.isHit = false; }
-            let dx = player.x + player.width/2 - (this.x + this.width/2);
-            let dy = player.y + player.height/2 - (this.y + this.height/2);
-            if (Math.sqrt(dx*dx + dy*dy) < 70) {
-                if (player.vy > 0 && player.y < this.y + 20) { this.takeDamage(); player.vy = -12; }
-                else player.takeDamage();
-            }
+            let dx = player.x + player.width/2 - (this.x + this.width/2); let dy = player.y + player.height/2 - (this.y + this.height/2);
+            if (Math.sqrt(dx*dx + dy*dy) < 70) { if (player.vy > 0 && player.y < this.y + 20) { this.takeDamage(); player.vy = -12; } else player.takeDamage(); }
         }
         takeDamage() {
             if (this.isHit) return;
@@ -375,45 +215,25 @@
         constructor(x, y, w, h) { this.x = x; this.y = y; this.w = w; this.h = h; }
         draw() {
             ctx.save(); ctx.translate(this.x - cameraX, this.y);
-            let gradient = ctx.createLinearGradient(0, 0, 0, this.h);
-            gradient.addColorStop(0, '#ffb6c1'); gradient.addColorStop(1, '#ffd700');
+            let gradient = ctx.createLinearGradient(0, 0, 0, this.h); gradient.addColorStop(0, '#ffb6c1'); gradient.addColorStop(1, '#ffd700');
             ctx.fillStyle = gradient; ctx.fillRect(0, 0, this.w, this.h);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; ctx.lineWidth = 2;
             for(let i=0; i<this.w; i+=40) for(let j=0; j<this.h; j+=20) ctx.strokeRect(i, j, 40, 20);
             ctx.restore();
         }
-        checkCollision(p) {
-            if (p.x + p.width > this.x && p.x < this.x + this.w && p.y + p.height > this.y && p.y + p.height < this.y + this.h + p.vy) {
-                if (p.vy >= 0) { p.y = this.y - p.height; p.vy = 0; p.onGround = true; p.lastSafeX = this.x + 20; p.lastSafeY = this.y - p.height; }
-            }
-        }
+        checkCollision(p) { if (p.x + p.width > this.x && p.x < this.x + this.w && p.y + p.height > this.y && p.y + p.height < this.y + this.h + p.vy) { if (p.vy >= 0) { p.y = this.y - p.height; p.vy = 0; p.onGround = true; p.lastSafeX = this.x + 20; p.lastSafeY = this.y - p.height; } } }
     }
 
     class Collectible {
         constructor(x, y, emoji) { this.x = x; this.y = y; this.emoji = emoji; this.collected = false; this.bob = 0; }
-        draw() {
-            if (this.collected) return;
-            this.bob += 0.1; ctx.save(); ctx.font = '30px serif'; ctx.textAlign = 'center'; ctx.fillText(this.emoji, this.x - cameraX, this.y + Math.sin(this.bob) * 5); ctx.restore();
-        }
-        checkCollision(p) {
-            if (this.collected) return;
-            let dx = p.x + p.width/2 - this.x; let dy = p.y + p.height/2 - this.y;
-            if (Math.sqrt(dx*dx + dy*dy) < 40) { this.collected = true; collectedCount++; updateHUD(); for(let i=0; i<10; i++) particles.push(new Particle(this.x, this.y, '#ffd700')); }
-        }
+        draw() { if (this.collected) return; this.bob += 0.1; ctx.save(); ctx.font = '30px serif'; ctx.textAlign = 'center'; ctx.fillText(this.emoji, this.x - cameraX, this.y + Math.sin(this.bob) * 5); ctx.restore(); }
+        checkCollision(p) { if (this.collected) return; let dx = p.x + p.width/2 - this.x; let dy = p.y + p.height/2 - this.y; if (Math.sqrt(dx*dx + dy*dy) < 40) { this.collected = true; collectedCount++; updateHUD(); for(let i=0; i<10; i++) particles.push(new Particle(this.x, this.y, '#ffd700')); } }
     }
 
     class Particle {
-        constructor(x, y, color, isSparkle = false) {
-            this.x = x; this.y = y; this.color = color; this.vx = (Math.random() - 0.5) * 4; this.vy = (Math.random() - 0.5) * 4;
-            this.life = 1.0; this.decay = 0.02 + Math.random() * 0.02; this.isSparkle = isSparkle;
-        }
+        constructor(x, y, color, isSparkle = false) { this.x = x; this.y = y; this.color = color; this.vx = (Math.random() - 0.5) * 4; this.vy = (Math.random() - 0.5) * 4; this.life = 1.0; this.decay = 0.02 + Math.random() * 0.02; this.isSparkle = isSparkle; }
         update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; }
-        draw() {
-            ctx.globalAlpha = this.life; ctx.fillStyle = this.color;
-            if (this.isSparkle) { ctx.beginPath(); ctx.moveTo(this.x, this.y - 5); ctx.lineTo(this.x + 2, this.y - 2); ctx.lineTo(this.x + 5, this.y); ctx.lineTo(this.x + 2, this.y + 2); ctx.lineTo(this.x, this.y + 5); ctx.lineTo(this.x - 2, this.y + 2); ctx.lineTo(this.x - 5, this.y); ctx.lineTo(this.x - 2, this.y - 2); ctx.fill(); }
-            else { ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2); ctx.fill(); }
-            ctx.globalAlpha = 1.0;
-        }
+        draw() { ctx.globalAlpha = this.life; ctx.fillStyle = this.color; if (this.isSparkle) { ctx.beginPath(); ctx.moveTo(this.x, this.y - 5); ctx.lineTo(this.x + 2, this.y - 2); ctx.lineTo(this.x + 5, this.y); ctx.lineTo(this.x + 2, this.y + 2); ctx.lineTo(this.x, this.y + 5); ctx.lineTo(this.x - 2, this.y + 2); ctx.lineTo(this.x - 5, this.y); ctx.lineTo(this.x - 2, this.y - 2); ctx.fill(); } else { ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1.0; }
     }
 
     class Man {
@@ -422,25 +242,15 @@
             ctx.save(); ctx.translate(this.x - cameraX + 20, this.fallY + 35);
             if (this.isFalling) ctx.rotate(this.rotation);
             ctx.fillStyle = '#ff69b4'; ctx.font = 'bold 16px Fredoka'; ctx.textAlign = 'center'; ctx.fillText('Oussama', 0, -55);
-            if (!oussamaReleased) {
-                ctx.strokeStyle = '#555'; ctx.lineWidth = 4; ctx.strokeRect(-30, -50, 60, 100);
-                for(let i=-20; i<=20; i+=10) { ctx.beginPath(); ctx.moveTo(i, -50); ctx.lineTo(i, 50); ctx.stroke(); }
-            }
-            ctx.font = '40px serif'; ctx.textAlign = 'center'; ctx.fillText('👦🏻', 0, -15);
-            ctx.fillStyle = '#333'; ctx.fillRect(-15, 0, 30, 25);
-            ctx.fillStyle = '#1a1a1a'; ctx.fillRect(-15, 25, 12, 20); ctx.fillRect(3, 25, 12, 20);
-            ctx.restore();
-            if (this.isFalling) { this.rotation += 0.1; this.fallY += 10; }
+            if (!oussamaReleased) { ctx.strokeStyle = '#555'; ctx.lineWidth = 4; ctx.strokeRect(-30, -50, 60, 100); for(let i=-20; i<=20; i+=10) { ctx.beginPath(); ctx.moveTo(i, -50); ctx.lineTo(i, 50); ctx.stroke(); } }
+            ctx.font = '40px serif'; ctx.textAlign = 'center'; ctx.fillText('👦🏻', 0, -15); ctx.fillStyle = '#333'; ctx.fillRect(-15, 0, 30, 25); ctx.fillStyle = '#1a1a1a'; ctx.fillRect(-15, 25, 12, 20); ctx.fillRect(3, 25, 12, 20);
+            ctx.restore(); if (this.isFalling) { this.rotation += 0.1; this.fallY += 10; }
         }
         checkWin(p) { if (gameActive && oussamaReleased && p.x + p.width > this.x) endGame(true); }
     }
 
-    const player = new Player();
-    let platforms = []; let collectibles = []; let clouds = [];
-    let boss = new Boss(LEVEL_WIDTH - 700, GROUND_Y - 100);
-    let man = new Man(LEVEL_WIDTH - 150, GROUND_Y - 70);
-    let totalCollectibles = 12;
-
+    const player = new Player(); let platforms = []; let collectibles = []; let clouds = [];
+    let boss = new Boss(LEVEL_WIDTH - 700, GROUND_Y - 100); let man = new Man(LEVEL_WIDTH - 150, GROUND_Y - 70);
     function initLevel() {
         platforms = []; collectibles = []; clouds = []; collectedCount = 0; bossDefeated = false; oussamaReleased = false;
         boss = new Boss(LEVEL_WIDTH - 700, GROUND_Y - 100); man = new Man(LEVEL_WIDTH - 150, GROUND_Y - 70);
@@ -451,48 +261,27 @@
         collectibles = emojiList.map((e, i) => new Collectible(400 + i * 250, GROUND_Y - 150 - (i%2)*50, e));
         updateHUD();
     }
-
-    function updateHUD() {
-        heartsDisplay.innerText = '❤️'.repeat(player.hearts);
-        collectiblesDisplay.innerText = `${collectedCount} / ${totalCollectibles}`;
-    }
-
+    function updateHUD() { heartsDisplay.innerText = '❤️'.repeat(player.hearts); collectiblesDisplay.innerText = `${collectedCount} / 12`; }
     function endGame(win) {
         if (!gameActive) return; gameActive = false; overlay.style.display = 'flex';
         if (win) { man.isFalling = true; overlayMessage.innerHTML = "YOU WIN, CONGRATULATIONS,<br>maadech daprem svp ❤️"; restartBtn.innerText = "Play Again"; startConfetti(); }
         else { overlayMessage.innerText = "yyyyraweh hahaha aya 3awed"; restartBtn.innerText = "Try Again"; }
     }
-
-    function startConfetti() {
-        const shapes = ['🌸', '🌼', '💖', '✨', '💎'];
-        for(let i=0; i<120; i++) confetti.push({ x: Math.random() * V_WIDTH, y: -Math.random() * V_HEIGHT, vx: (Math.random() - 0.5) * 4, vy: 2 + Math.random() * 3, char: shapes[Math.floor(Math.random() * shapes.length)], size: 10 + Math.random() * 25 });
-    }
-
+    function startConfetti() { const shapes = ['🌸', '🌼', '💖', '✨', '💎']; for(let i=0; i<120; i++) confetti.push({ x: Math.random() * V_WIDTH, y: -Math.random() * V_HEIGHT, vx: (Math.random() - 0.5) * 4, vy: 2 + Math.random() * 3, char: shapes[Math.floor(Math.random() * shapes.length)], size: 10 + Math.random() * 25 }); }
     function resetGame() { player.reset(); cameraX = 0; gameActive = true; overlay.style.display = 'none'; confetti = []; initLevel(); }
     restartBtn.onclick = resetGame;
-
-    setInterval(() => {
-        quoteContainer.style.opacity = 0;
-        setTimeout(() => { currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length; quoteContainer.innerText = quotes[currentQuoteIndex]; quoteContainer.style.opacity = 1; }, 500);
-    }, 4000);
-
+    setInterval(() => { quoteContainer.style.opacity = 0; setTimeout(() => { currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length; quoteContainer.innerText = quotes[currentQuoteIndex]; quoteContainer.style.opacity = 1; }, 500); }, 4000);
     function gameLoop() {
-        ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
-        let bgGrad = ctx.createLinearGradient(0, 0, 0, V_HEIGHT); bgGrad.addColorStop(0, '#ffc0cb'); bgGrad.addColorStop(1, '#e6e6fa');
-        ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+        ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT); let bgGrad = ctx.createLinearGradient(0, 0, 0, V_HEIGHT); bgGrad.addColorStop(0, '#ffc0cb'); bgGrad.addColorStop(1, '#e6e6fa'); ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
         ctx.font = '40px serif'; clouds.forEach(c => { ctx.globalAlpha = 0.4; ctx.fillText('☁️', c.x - cameraX * c.s, c.y); ctx.globalAlpha = 1.0; });
         if (gameActive) { let targetCameraX = player.x - V_WIDTH / 3; cameraX += (targetCameraX - cameraX) * 0.1; cameraX = Math.max(0, Math.min(cameraX, LEVEL_WIDTH - V_WIDTH)); }
-        platforms.forEach(p => { p.draw(); if (gameActive) p.checkCollision(player); });
-        collectibles.forEach(c => { c.draw(); if (gameActive) c.checkCollision(player); });
+        platforms.forEach(p => { p.draw(); if (gameActive) p.checkCollision(player); }); collectibles.forEach(c => { c.draw(); if (gameActive) c.checkCollision(player); });
         boss.update(); boss.draw(); man.draw(); man.checkWin(player); player.update(); player.draw();
         for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); particles[i].draw(); if (particles[i].life <= 0) particles.splice(i, 1); }
         confetti.forEach(c => { c.x += c.vx; c.y += c.vy; ctx.font = `${c.size}px serif`; ctx.fillText(c.char, c.x, c.y); if (c.y > V_HEIGHT) { c.y = -20; c.x = Math.random() * V_WIDTH; } });
         requestAnimationFrame(gameLoop);
     }
-
-    initLevel();
-    gameLoop();
+    initLevel(); gameLoop();
 </script>
-
 </body>
 </html>
