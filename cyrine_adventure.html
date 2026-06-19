@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyrine's Happy Adventure</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #ffe4e1;
+            overflow: hidden;
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 5px solid #ffb6c1;
+        }
+
+        canvas {
+            display: block;
+            background: linear-gradient(to bottom, #ffc0cb, #e6e6fa);
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        #hud {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        #hearts {
+            font-size: 24px;
+            color: #ff1493;
+            text-shadow: 1px 1px 2px white;
+        }
+
+        #quote-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            width: 80%;
+            transition: opacity 0.5s ease-in-out;
+            color: #ff69b4;
+            font-weight: 600;
+            font-size: 1.2rem;
+            text-shadow: 1px 1px 0px white;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 192, 203, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #overlay h1 {
+            color: #ff1493;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px white;
+            line-height: 1.2;
+        }
+
+        #drake-img {
+            width: 180px;
+            height: auto;
+            margin-bottom: 15px;
+            border-radius: 15px;
+            border: 4px solid #ff69b4;
+            box-shadow: 0 0 15px rgba(255, 105, 180, 0.5);
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 1.2rem;
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Fredoka', sans-serif;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #ff1493;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui-layer">
+        <div id="hud">
+            <div id="hearts">❤️❤️❤️❤️❤️</div>
+            <div id="collectibles" style="color: #ff69b4; font-weight: 600; text-shadow: 1px 1px 0 white;">0 / 12</div>
+        </div>
+        <div id="quote-container">You light up every room</div>
+    </div>
+    <div id="overlay">
+        <img id="drake-img" src="drake.png">
+        <h1 id="overlayMessage">Message</h1>
+        <button id="restartBtn">Restart</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const quoteContainer = document.getElementById('quote-container');
+    const heartsDisplay = document.getElementById('hearts');
+    const collectiblesDisplay = document.getElementById('collectibles');
+    const overlay = document.getElementById('overlay');
+    const overlayMessage = document.getElementById('overlayMessage');
+    const drakeImg = document.getElementById('drake-img');
+    const restartBtn = document.getElementById('restartBtn');
+
+    // Game constants
+    const CANVAS_WIDTH = 800;
+    const CANVAS_HEIGHT = 450;
+    const GRAVITY = 0.5;
+    const JUMP_FORCE = -12;
+    const MOVE_SPEED = 5;
+    const GROUND_Y = CANVAS_HEIGHT - 60;
+    const LEVEL_WIDTH = 4000;
+
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
+
+    // Game state
+    let gameActive = true;
+    let cameraX = 0;
+    let particles = [];
+    let confetti = [];
+    let collectedCount = 0;
+    let bossDefeated = false;
+    let oussamaReleased = false;
+    let quotes = [
+        "You are beautiful",
+        "Cyrine = Sunshine",
+        "You light up every room",
+        "Stay happy please",
+        "You are the best",
+        "Your smile changes everything",
+        "Keep shining!",
+        "You are precious"
+    ];
+    let currentQuoteIndex = 0;
+
+    const keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ' ': false };
+    window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+    window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+    class Player {
+        constructor() { this.reset(); }
+        reset() {
+            this.x = 50; this.y = GROUND_Y - 50; this.width = 40; this.height = 50;
+            this.vx = 0; this.vy = 0; this.onGround = false; this.hearts = 5;
+            this.isInvincible = false; this.invincibilityTimer = 0;
+            this.lastSafeX = 50; this.lastSafeY = GROUND_Y - 50;
+            this.victoryHop = 0;
+        }
+        update() {
+            if (!gameActive && this.hearts > 0) {
+                this.victoryHop += 0.1;
+                this.y = (GROUND_Y - 50) + Math.sin(this.victoryHop) * 20;
+                return;
+            }
+            if (keys.ArrowLeft) this.vx = -MOVE_SPEED;
+            else if (keys.ArrowRight) this.vx = MOVE_SPEED;
+            else this.vx = 0;
+            if ((keys.ArrowUp || keys[' ']) && this.onGround) {
+                this.vy = JUMP_FORCE; this.onGround = false;
+                for(let i=0; i<8; i++) particles.push(new Particle(this.x + this.width/2, this.y + this.height, '#fff', true));
+            }
+            this.vy += GRAVITY; this.x += this.vx; this.y += this.vy;
+            if (this.x < 0) this.x = 0;
+            if (this.y > CANVAS_HEIGHT) this.takeDamage();
+            this.onGround = false;
+            if (this.isInvincible) {
+                this.invincibilityTimer--;
+                if (this.invincibilityTimer <= 0) this.isInvincible = false;
+            }
+        }
+        draw() {
+            if (this.isInvincible && Math.floor(Date.now() / 100) % 2 === 0) return;
+            ctx.save();
+            ctx.translate(this.x - cameraX, this.y);
+            ctx.fillStyle = '#ff69b4'; ctx.beginPath(); ctx.moveTo(5, 45); ctx.lineTo(35, 45); ctx.lineTo(25, 20); ctx.lineTo(15, 20); ctx.fill();
+            ctx.fillStyle = '#ffe0bd'; ctx.beginPath(); ctx.arc(20, 15, 12, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.arc(20, 12, 14, Math.PI, 0); ctx.fillRect(6, 12, 8, 20); ctx.fillRect(26, 12, 8, 20); ctx.fill();
+            ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(16, 15, 1.5, 0, Math.PI * 2); ctx.arc(24, 15, 1.5, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#ff1493'; ctx.beginPath(); ctx.arc(20, 18, 5, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
+            ctx.fillStyle = '#ff1493'; ctx.beginPath(); ctx.arc(10, 5, 4, 0, Math.PI * 2); ctx.arc(15, 5, 4, 0, Math.PI * 2); ctx.fill();
+            if (!this.onGround && Math.random() > 0.5) particles.push(new Particle(this.x + Math.random() * this.width, this.y + this.height, '#ffb6c1'));
+            ctx.restore();
+        }
+        takeDamage() {
+            if (this.isInvincible) return;
+            this.hearts--; updateHUD();
+            if (this.hearts <= 0) endGame(false);
+            else {
+                this.isInvincible = true; this.invincibilityTimer = 120;
+                this.x = this.lastSafeX; this.y = this.lastSafeY; this.vx = 0; this.vy = 0;
+            }
+        }
+    }
+
+    class Boss {
+        constructor(x, y) {
+            this.x = x; this.y = y; this.width = 100; this.height = 100;
+            this.health = 3; this.vx = -2; this.isHit = false; this.hitTimer = 0;
+        }
+        update() {
+            if (bossDefeated) return;
+            this.x += this.vx;
+            if (this.x < LEVEL_WIDTH - 900 || this.x > LEVEL_WIDTH - 500) this.vx *= -1;
+            if (this.isHit) { this.hitTimer--; if (this.hitTimer <= 0) this.isHit = false; }
+            let dx = player.x + player.width/2 - (this.x + this.width/2);
+            let dy = player.y + player.height/2 - (this.y + this.height/2);
+            if (Math.sqrt(dx*dx + dy*dy) < 70) {
+                if (player.vy > 0 && player.y < this.y + 20) { this.takeDamage(); player.vy = -12; }
+                else player.takeDamage();
+            }
+        }
+        takeDamage() {
+            if (this.isHit) return;
+            this.health--; this.isHit = true; this.hitTimer = 60;
+            for(let i=0; i<20; i++) particles.push(new Particle(this.x + 50, this.y + 50, '#ff0000'));
+            if (this.health <= 0) {
+                bossDefeated = true; oussamaReleased = true;
+                for(let i=0; i<50; i++) particles.push(new Particle(this.x + 50, this.y + 50, '#ffd700', true));
+            }
+        }
+        draw() {
+            if (bossDefeated) return;
+            ctx.save(); ctx.translate(this.x - cameraX, this.y);
+            if (this.isHit && Math.floor(Date.now() / 100) % 2 === 0) ctx.globalAlpha = 0.5;
+            ctx.fillStyle = '#4b0082'; ctx.beginPath(); ctx.roundRect(0, 0, 100, 100, 20); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(30, 30, 15, 0, Math.PI * 2); ctx.arc(70, 30, 15, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(30 + Math.sin(Date.now()/200)*5, 30, 5, 0, Math.PI * 2); ctx.arc(70 + Math.sin(Date.now()/200)*5, 30, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#ff0000'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(20, 70); ctx.quadraticCurveTo(50, 90, 80, 70); ctx.stroke();
+            ctx.fillStyle = '#555'; ctx.fillRect(0, -20, 100, 10); ctx.fillStyle = '#ff0000'; ctx.fillRect(0, -20, (this.health / 3) * 100, 10);
+            ctx.restore();
+        }
+    }
+
+    class Platform {
+        constructor(x, y, w, h) { this.x = x; this.y = y; this.w = w; this.h = h; }
+        draw() {
+            ctx.save(); ctx.translate(this.x - cameraX, this.y);
+            let gradient = ctx.createLinearGradient(0, 0, 0, this.h);
+            gradient.addColorStop(0, '#ffb6c1'); gradient.addColorStop(1, '#ffd700');
+            ctx.fillStyle = gradient; ctx.fillRect(0, 0, this.w, this.h);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; ctx.lineWidth = 2;
+            for(let i=0; i<this.w; i+=40) for(let j=0; j<this.h; j+=20) ctx.strokeRect(i, j, 40, 20);
+            ctx.restore();
+        }
+        checkCollision(p) {
+            if (p.x + p.width > this.x && p.x < this.x + this.w && p.y + p.height > this.y && p.y + p.height < this.y + this.h + p.vy) {
+                if (p.vy >= 0) { p.y = this.y - p.height; p.vy = 0; p.onGround = true; p.lastSafeX = this.x + 20; p.lastSafeY = this.y - p.height; }
+            }
+        }
+    }
+
+    class Collectible {
+        constructor(x, y, emoji) { this.x = x; this.y = y; this.emoji = emoji; this.collected = false; this.bob = 0; }
+        draw() {
+            if (this.collected) return;
+            this.bob += 0.1; ctx.save(); ctx.font = '30px serif'; ctx.textAlign = 'center'; ctx.fillText(this.emoji, this.x - cameraX, this.y + Math.sin(this.bob) * 5); ctx.restore();
+        }
+        checkCollision(p) {
+            if (this.collected) return;
+            let dx = p.x + p.width/2 - this.x; let dy = p.y + p.height/2 - this.y;
+            if (Math.sqrt(dx*dx + dy*dy) < 40) { this.collected = true; collectedCount++; updateHUD(); for(let i=0; i<10; i++) particles.push(new Particle(this.x, this.y, '#ffd700')); }
+        }
+    }
+
+    class Particle {
+        constructor(x, y, color, isSparkle = false) {
+            this.x = x; this.y = y; this.color = color; this.vx = (Math.random() - 0.5) * 4; this.vy = (Math.random() - 0.5) * 4;
+            this.life = 1.0; this.decay = 0.02 + Math.random() * 0.02; this.isSparkle = isSparkle;
+        }
+        update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; }
+        draw() {
+            ctx.globalAlpha = this.life; ctx.fillStyle = this.color;
+            if (this.isSparkle) { ctx.beginPath(); ctx.moveTo(this.x, this.y - 5); ctx.lineTo(this.x + 2, this.y - 2); ctx.lineTo(this.x + 5, this.y); ctx.lineTo(this.x + 2, this.y + 2); ctx.lineTo(this.x, this.y + 5); ctx.lineTo(this.x - 2, this.y + 2); ctx.lineTo(this.x - 5, this.y); ctx.lineTo(this.x - 2, this.y - 2); ctx.fill(); }
+            else { ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2); ctx.fill(); }
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    class Man {
+        constructor(x, y) { this.x = x; this.y = y; this.width = 40; this.height = 70; this.isFalling = false; this.rotation = 0; this.fallY = y; }
+        draw() {
+            ctx.save(); ctx.translate(this.x - cameraX + 20, this.fallY + 35);
+            if (this.isFalling) ctx.rotate(this.rotation);
+            ctx.fillStyle = '#ff69b4'; ctx.font = 'bold 16px Fredoka'; ctx.textAlign = 'center'; ctx.fillText('Oussama', 0, -55);
+            if (!oussamaReleased) {
+                ctx.strokeStyle = '#555'; ctx.lineWidth = 4; ctx.strokeRect(-30, -50, 60, 100);
+                for(let i=-20; i<=20; i+=10) { ctx.beginPath(); ctx.moveTo(i, -50); ctx.lineTo(i, 50); ctx.stroke(); }
+            }
+            ctx.font = '40px serif'; ctx.textAlign = 'center'; ctx.fillText('👦🏻', 0, -15);
+            ctx.fillStyle = '#333'; ctx.fillRect(-15, 0, 30, 25);
+            ctx.fillStyle = '#1a1a1a'; ctx.fillRect(-15, 25, 12, 20); ctx.fillRect(3, 25, 12, 20);
+            ctx.restore();
+            if (this.isFalling) { this.rotation += 0.1; this.fallY += 10; }
+        }
+        checkWin(p) {
+            if (gameActive && oussamaReleased && p.x + p.width > this.x) {
+                endGame(true);
+            }
+        }
+    }
+
+    const player = new Player();
+    let platforms = []; let collectibles = []; let clouds = [];
+    let boss = new Boss(LEVEL_WIDTH - 700, GROUND_Y - 100);
+    let man = new Man(LEVEL_WIDTH - 150, GROUND_Y - 70);
+    let totalCollectibles = 12;
+
+    function initLevel() {
+        platforms = []; collectibles = []; clouds = [];
+        collectedCount = 0; bossDefeated = false; oussamaReleased = false;
+        boss = new Boss(LEVEL_WIDTH - 700, GROUND_Y - 100);
+        man = new Man(LEVEL_WIDTH - 150, GROUND_Y - 70);
+        
+        for(let i=0; i<25; i++) clouds.push({ x: Math.random() * LEVEL_WIDTH, y: Math.random() * 150 + 20, s: Math.random() * 0.5 + 0.5 });
+
+        // Build level platforms - Ensure Oussama is on a solid ground
+        platforms.push(new Platform(0, GROUND_Y, 800, 60));
+        platforms.push(new Platform(900, GROUND_Y, 600, 60));
+        platforms.push(new Platform(1600, GROUND_Y, 700, 60));
+        platforms.push(new Platform(2400, GROUND_Y, 600, 60));
+        // Final platform for Boss and Oussama
+        platforms.push(new Platform(3100, GROUND_Y, 900, 60));
+
+        platforms.push(new Platform(400, GROUND_Y - 100, 150, 20));
+        platforms.push(new Platform(1200, GROUND_Y - 120, 200, 20));
+        platforms.push(new Platform(2000, GROUND_Y - 100, 200, 20));
+        platforms.push(new Platform(2700, GROUND_Y - 120, 200, 20));
+
+        const emojiList = ['🌸', '🎁', '⭐', '🦋', '🍓', '💌', '🍩', '💎', '🌷', '🍦', '🎀', '🍭'];
+        collectibles = emojiList.map((e, i) => new Collectible(400 + i * 250, GROUND_Y - 150 - (i%2)*50, e));
+        updateHUD();
+    }
+
+    function updateHUD() {
+        heartsDisplay.innerText = '❤️'.repeat(player.hearts);
+        collectiblesDisplay.innerText = `${collectedCount} / ${totalCollectibles}`;
+    }
+
+    function endGame(win) {
+        if (!gameActive) return;
+        gameActive = false;
+        overlay.style.display = 'flex';
+        if (win) {
+            man.isFalling = true;
+            overlayMessage.innerHTML = "YOU WIN, CONGRATULATIONS,<br>maadech daprem svp ❤️";
+            restartBtn.innerText = "Play Again";
+            startConfetti();
+        } else {
+            overlayMessage.innerText = "yyyyraweh hahaha aya 3awed";
+            restartBtn.innerText = "Try Again";
+        }
+    }
+
+    function startConfetti() {
+        const shapes = ['🌸', '🌼', '💖', '✨', '💎'];
+        for(let i=0; i<120; i++) confetti.push({ x: Math.random() * CANVAS_WIDTH, y: -Math.random() * CANVAS_HEIGHT, vx: (Math.random() - 0.5) * 4, vy: 2 + Math.random() * 3, char: shapes[Math.floor(Math.random() * shapes.length)], size: 10 + Math.random() * 25 });
+    }
+
+    function resetGame() { player.reset(); cameraX = 0; gameActive = true; overlay.style.display = 'none'; confetti = []; initLevel(); }
+    restartBtn.onclick = resetGame;
+
+    setInterval(() => {
+        quoteContainer.style.opacity = 0;
+        setTimeout(() => {
+            currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
+            quoteContainer.innerText = quotes[currentQuoteIndex];
+            quoteContainer.style.opacity = 1;
+        }, 500);
+    }, 4000);
+
+    function gameLoop() {
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        let bgGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+        bgGrad.addColorStop(0, '#ffc0cb'); bgGrad.addColorStop(1, '#e6e6fa');
+        ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.font = '40px serif';
+        clouds.forEach(c => { ctx.globalAlpha = 0.4; ctx.fillText('☁️', c.x - cameraX * c.s, c.y); ctx.globalAlpha = 1.0; });
+
+        if (gameActive) {
+            let targetCameraX = player.x - CANVAS_WIDTH / 3;
+            cameraX += (targetCameraX - cameraX) * 0.1;
+            cameraX = Math.max(0, Math.min(cameraX, LEVEL_WIDTH - CANVAS_WIDTH));
+        }
+
+        platforms.forEach(p => { p.draw(); if (gameActive) p.checkCollision(player); });
+        collectibles.forEach(c => { c.draw(); if (gameActive) c.checkCollision(player); });
+        boss.update(); boss.draw();
+        man.draw(); man.checkWin(player);
+        player.update(); player.draw();
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            particles[i].update(); particles[i].draw();
+            if (particles[i].life <= 0) particles.splice(i, 1);
+        }
+        confetti.forEach(c => {
+            c.x += c.vx; c.y += c.vy; ctx.font = `${c.size}px serif`; ctx.fillText(c.char, c.x, c.y);
+            if (c.y > CANVAS_HEIGHT) { c.y = -20; c.x = Math.random() * CANVAS_WIDTH; }
+        });
+        requestAnimationFrame(gameLoop);
+    }
+
+    initLevel();
+    gameLoop();
+</script>
+
+</body>
+</html>
